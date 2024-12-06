@@ -10,7 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/3.2/ref/settings/
 """
 
-import os
+# import os
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -57,7 +57,7 @@ MIDDLEWARE = [
 
 ROOT_URLCONF = 'blogicum.urls'
 
-TEMPLATES_DIRS = os.path.join(BASE_DIR, 'templates')
+TEMPLATES_DIRS = BASE_DIR / 'blogicum' / 'templates'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
