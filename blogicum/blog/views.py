@@ -52,7 +52,6 @@ def post_detail(request, post_id):
     return render(request, 'blog/detail.html', context)
 
 
-@login_required
 def category_posts(request, category_slug):
     """Views функция для вывода постов выбранной категории."""
     category = get_object_or_404(Category,
