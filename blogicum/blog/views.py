@@ -54,12 +54,12 @@ def post_detail(request, post_id):
 
 @login_required
 def category_posts(request, category_slug):
-    """Views функция для выводов постов выбранной категории."""
-    category = get_object_or_404(
-        Category,
-        slug=category_slug,
-        is_published=True)
+    """Views функция для вывода постов выбранной категории."""
+    category = get_object_or_404(Category,
+                                 slug=category_slug,
+                                 is_published=True)
 
+    # Получаем опубликованные посты для выбранной категории
     post_list = get_published_posts().filter(category=category)
     paginator = Paginator(post_list, LIMIT_POSTS_COUNT)
 
