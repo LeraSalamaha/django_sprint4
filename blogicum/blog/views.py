@@ -89,10 +89,11 @@ def create_post(request):
 
 
 def profile_view(request, username):
+    """Views функция для отображения профиля автора."""
     profile = get_object_or_404(User, username=username)
-    posts = Post.objects.filter(author=profile)
+    # Получаем посты автора, отсортированные от новых к старым
+    posts = Post.objects.filter(author=profile).order_by('-pub_date')
     paginator = Paginator(posts, LIMIT_POSTS_COUNT)
-
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
 
