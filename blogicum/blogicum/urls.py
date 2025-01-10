@@ -5,13 +5,13 @@ from django.conf.urls.static import static
 
 from django.contrib.auth.forms import UserCreationForm
 from django.views.generic.edit import CreateView
-from django.views.generic import TemplateView
+# from django.views.generic import TemplateView
 
 from django.urls import include, path, reverse_lazy
 
-handler403 = TemplateView.as_view(template_name='pages/403.html')
-handler404 = TemplateView.as_view(template_name='pages/404.html')
-handler500 = TemplateView.as_view(template_name='pages/500.html')
+# handler403 = TemplateView.as_view(template_name='pages/403.html')
+handler404 = 'pages.views.page_not_found'
+handler500 = 'pages.views.server_error'
 
 
 urlpatterns = [

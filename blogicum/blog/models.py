@@ -103,4 +103,4 @@ class Comments(models.Model):
         ordering = ('created_at',)
 
     def __str__(self):
-        return self.title
+        return self.text[:MAX_LENGTH_STR]
