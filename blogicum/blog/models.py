@@ -1,12 +1,12 @@
-from django.db import models
 from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
 CHAR_FIELD_MAX_LENGT = 256
 MAX_LENGTH_STR = 15
 
 
-class Publications(models.Model):
+class PublicationModel(models.Model):
     is_published = models.BooleanField(
         default=True,
         verbose_name='Опубликовано',
@@ -19,7 +19,7 @@ class Publications(models.Model):
         abstract = True
 
 
-class Post(Publications):
+class Post(PublicationModel):
     title = models.CharField(
         max_length=CHAR_FIELD_MAX_LENGT,
         verbose_name='Заголовок')
@@ -56,7 +56,7 @@ class Post(Publications):
         return self.title[:MAX_LENGTH_STR]
 
 
-class Category(Publications):
+class Category(PublicationModel):
     title = models.CharField(
         max_length=CHAR_FIELD_MAX_LENGT,
         verbose_name='Заголовок')
@@ -76,7 +76,7 @@ class Category(Publications):
         return self.title[:MAX_LENGTH_STR]
 
 
-class Location(Publications):
+class Location(PublicationModel):
     name = models.CharField(
         max_length=CHAR_FIELD_MAX_LENGT,
         verbose_name='Название места')
@@ -89,18 +89,28 @@ class Location(Publications):
         return self.name[:MAX_LENGTH_STR]
 
 
-class Comments(models.Model):
-    text = models.TextField('Текст коментария')
+class Comment(models.Model):
+    text = models.TextField(verbose_name='Текст комментария')
     post = models.ForeignKey(
         Post,
         on_delete=models.CASCADE,
         related_name='comment',
+        verbose_name='Пост'
     )
-    created_at = models.DateTimeField(auto_now_add=True)
-    author = models.ForeignKey(User, on_delete=models.CASCADE)
+    created_at = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Дата создания'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        verbose_name='Автор'
+    )
 
     class Meta:
         ordering = ('created_at',)
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии'
 
     def __str__(self):
         return self.text[:MAX_LENGTH_STR]

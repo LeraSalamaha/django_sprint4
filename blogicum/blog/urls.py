@@ -22,8 +22,8 @@ app_name = 'blog'
 urlpatterns = [
     path('', index, name='index'),
     path('posts/<int:post_id>/', post_detail, name='post_detail'),
-    path('posts/<int:id>/edit/', edit_post, name='edit_post'),
-    path('posts/<int:id>/delete/', post_delete, name='delete_post'),
+    path('posts/<int:post_id>/edit/', edit_post, name='edit_post'),
+    path('posts/<int:post_id>/delete/', post_delete, name='delete_post'),
     path('category/<slug:category_slug>/', category_posts,
          name='category_posts'),
     path('posts/create/', create_post, name='create_post'),
