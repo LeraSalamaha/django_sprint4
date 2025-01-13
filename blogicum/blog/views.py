@@ -11,35 +11,9 @@ from django.utils import timezone
 
 from .forms import PostForm, UserProfileForm, CommentForm
 from .models import Category, Post, Comment
-from .utils import get_published_posts
+from .utils import get_published_posts, paginate_queryset
+
 LIMIT_POSTS_COUNT = 10
-
-
-def paginate_queryset(request, queryset, limit):
-    paginator = Paginator(queryset, limit)
-    page_number = request.GET.get('page')
-    return paginator.get_page(page_number)
-
-
-def is_post_accessible(post, user):
-    """Проверяет, доступен ли пост для указанного пользователя."""
-    # Проверка на то, опубликован ли пост
-    if not post.is_published:
-        # Если пост не опубликован и пользователь не автор, возвращаем False
-        if post.author != user:
-            return False
-
-    # Проверка на то, опубликована ли категория поста
-    if post.category and not post.category.is_published:
-        if post.author != user:
-            return False
-
-    # Если пост отложен, проверяем, является ли пользователь автором
-    if post.pub_date > timezone.now():
-        if post.author != user:
-            return False
-
-    return True
 
 
 def index(request):
@@ -61,20 +35,26 @@ def post_detail(request, post_id):
     """Views функция для детализации постов."""
     post = get_object_or_404(Post, pk=post_id)
 
-    # Проверка доступности поста
-    if not is_post_accessible(post, request.user):
+    if not post.is_published and post.author != request.user:
+        return render(request, 'pages/404.html', status=404)
+
+    if post.category:
+        category = get_object_or_404(Category, pk=post.category.pk)
+        if not category.is_published and post.author != request.user:
+            return render(request, 'pages/404.html', status=404)
+
+    if post.pub_date > timezone.now() and post.author != request.user:
         return render(request, 'pages/404.html', status=404)
 
     comments = Comment.objects.filter(post=post)
     form = CommentForm(request.POST or None)
 
-    if request.method == 'POST':
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.post = post
-            comment.author = request.user
-            comment.save()
-            return redirect('blog:post_detail', post_id=post.id)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.post = post
+        comment.author = request.user
+        comment.save()
+        return redirect('blog:post_detail', post_id=post.id)
 
     context = {
         'post': post,
@@ -107,20 +87,19 @@ def category_posts(request, category_slug):
 def create_post(request):
     form = PostForm(request.POST or None, request.FILES or None)
 
-    if request.method == 'POST':
-        if form.is_valid():
-            post = form.save(commit=False)
-            post.author = request.user
+    if form.is_valid():
+        post = form.save(commit=False)
+        post.author = request.user
 
-            post.is_published = post.pub_date <= timezone.now()
+        post.is_published = post.pub_date <= timezone.now()
 
-            post.save()
-            profile_url = reverse(
-                'blog:profile',
-                kwargs={'username': request.user.username}
-            )
+        post.save()
+        profile_url = reverse(
+            'blog:profile',
+            kwargs={'username': request.user.username}
+        )
 
-            return redirect(profile_url)
+        return redirect(profile_url)
 
     return render(request, 'blog/create.html', {'form': form})
 
@@ -153,10 +132,9 @@ def edit_profile(request):
     user = request.user
     form = UserProfileForm(request.POST or None, instance=user)
 
-    if request.method == 'POST':
-        if form.is_valid():
-            form.save()
-            return redirect('blog:profile', username=user.username)
+    if form.is_valid():
+        form.save()
+        return redirect('blog:profile', username=user.username)
 
     return render(request, 'blog/user.html', {'form': form})
 
@@ -175,10 +153,9 @@ def edit_post(request, post_id):
 
     form = PostForm(request.POST or None, request.FILES or None, instance=post)
 
-    if request.method == 'POST':
-        if form.is_valid():
-            form.save()
-            return redirect('blog:post_detail', post_id=post.id)
+    if form.is_valid():
+        form.save()
+        return redirect('blog:post_detail', post_id=post.id)
 
     return render(request, 'blog/create.html', {'form': form, 'post': post})
 
@@ -201,13 +178,12 @@ def add_comment(request, post_id):
     post = get_object_or_404(Post, id=post_id)
     form = CommentForm(request.POST or None)
 
-    if request.method == 'POST':
-        if form.is_valid():
-            comment = form.save(commit=False)
-            comment.post = post
-            comment.author = request.user
-            comment.save()
-            return redirect('blog:post_detail', post_id=post.id)
+    if form.is_valid():
+        comment = form.save(commit=False)
+        comment.post = post
+        comment.author = request.user
+        comment.save()
+        return redirect('blog:post_detail', post_id=post.id)
 
     comments = post.comments.all().order_by('created_at')
     context = {
@@ -228,19 +204,11 @@ def edit_comment(request, post_id, comment_id):
             "Вы не имеете прав для редактирования этого комментария."
         )
 
-    if request.method == 'POST':
-        form = CommentForm(request.POST, instance=comment)
-# не стала исправлять , так как если меняю,
-# то не проходит тест
-# Страницы удаления и редактирования комментария
-#  должны иметь идентичные права доступа.
-#  Убедитесь, что GET-запрос к этим страницам возвращает
-#  один и тот же статус и не удаляет комментарий.
-        if form.is_valid():
-            form.save()
-            return redirect('blog:post_detail', post_id=post.id)
-    else:
-        form = CommentForm(instance=comment)
+    form = CommentForm(request.POST or None, instance=comment)
+
+    if form.is_valid():
+        form.save()
+        return redirect('blog:post_detail', post_id=post.id)
 
     comments = post.comment.all().order_by('created_at')
 
