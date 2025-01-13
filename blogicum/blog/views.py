@@ -3,7 +3,7 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.core.paginator import Paginator
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import render, redirect, get_object_or_404
 from django.urls import reverse, reverse_lazy
@@ -32,19 +32,15 @@ def index(request):
 
 
 def post_detail(request, post_id):
-    """Views функция для детализации постов."""
-    post = get_object_or_404(Post, pk=post_id)
+    """Функция для получения детализации поста."""
+    post_query = Post.objects.select_related('category').filter(
+        Q(is_published=True) | Q(author=request.user),
+        Q(category__is_published=True) | Q(category__isnull=True)
+        | Q(author=request.user),
+        Q(pub_date__lte=timezone.now()) | Q(author=request.user)
+    )
 
-    if not post.is_published and post.author != request.user:
-        return render(request, 'pages/404.html', status=404)
-
-    if post.category:
-        category = get_object_or_404(Category, pk=post.category.pk)
-        if not category.is_published and post.author != request.user:
-            return render(request, 'pages/404.html', status=404)
-
-    if post.pub_date > timezone.now() and post.author != request.user:
-        return render(request, 'pages/404.html', status=404)
+    post = get_object_or_404(post_query, pk=post_id)
 
     comments = Comment.objects.filter(post=post)
     form = CommentForm(request.POST or None)
